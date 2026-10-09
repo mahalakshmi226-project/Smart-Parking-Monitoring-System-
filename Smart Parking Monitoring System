@@ -1,0 +1,114 @@
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+#include <Servo.h>
+
+// LCD address and size
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+// Servo motor
+Servo gateServo;
+
+// Parking slot sensors
+const int slot1 = 2;
+const int slot2 = 3;
+const int slot3 = 4;
+const int slot4 = 5;
+
+// Vehicle entrance sensor
+const int entranceSensor = 6;
+
+// Servo motor pin
+const int servoPin = 9;
+
+// Number of parking slots
+const int totalSlots = 4;
+
+int availableSlots = 0;
+
+void setup() {
+  Serial.begin(9600);
+
+  // Configure IR sensors
+  pinMode(slot1, INPUT);
+  pinMode(slot2, INPUT);
+  pinMode(slot3, INPUT);
+  pinMode(slot4, INPUT);
+  pinMode(entranceSensor, INPUT);
+
+  // Initialize servo
+  gateServo.attach(servoPin);
+  gateServo.write(0);  // Gate closed
+
+  // Initialize LCD
+  lcd.init();
+  lcd.backlight();
+
+  lcd.setCursor(0, 0);
+  lcd.print(" Smart Parking ");
+  lcd.setCursor(0, 1);
+  lcd.print(" System Ready ");
+  delay(2000);
+  lcd.clear();
+}
+
+void loop() {
+
+  // Count available parking slots
+  availableSlots = 0;
+
+  if (digitalRead(slot1) == HIGH)
+    availableSlots++;
+
+  if (digitalRead(slot2) == HIGH)
+    availableSlots++;
+
+  if (digitalRead(slot3) == HIGH)
+    availableSlots++;
+
+  if (digitalRead(slot4) == HIGH)
+    availableSlots++;
+
+  // Display parking information
+  lcd.setCursor(0, 0);
+  lcd.print("Available Slots:");
+
+  lcd.setCursor(0, 1);
+  lcd.print("       ");
+  lcd.setCursor(0, 1);
+  lcd.print(availableSlots);
+  lcd.print("/");
+  lcd.print(totalSlots);
+  lcd.print(" Slots     ");
+
+  // Detect vehicle at entrance
+  if (digitalRead(entranceSensor) == LOW) {
+
+    if (availableSlots > 0) {
+
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("Parking Space");
+      lcd.setCursor(0, 1);
+      lcd.print("Available!");
+
+      // Open gate
+      gateServo.write(90);
+      delay(3000);
+
+      // Close gate
+      gateServo.write(0);
+
+    } else {
+
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("Parking Full!");
+      lcd.setCursor(0, 1);
+      lcd.print("Please Wait");
+
+      delay(2000);
+    }
+  }
+
+  delay(300);
+}
